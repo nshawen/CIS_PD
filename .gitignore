@@ -31,6 +31,10 @@ $RECYCLE.BIN/
 # Thumbnails
 ._*
 
+#ipython notebook tmp
+.ipynb_checkpoints*
+.ipynb_checkpoints/*-checkpoint.ipynb
+
 # Files that might appear in the root of a volume
 .DocumentRevisions-V100
 .fseventsd
