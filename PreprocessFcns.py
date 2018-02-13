@@ -10,11 +10,10 @@ import nolds
 
 
 #extract clips for accelerometer and gyro data (allows selecting start and end fraction)
-def gen_clips(act_dict,task,location,clipsize=5000,overlap=0,verbose=False,startTS=0,endTS=1):
+#lentol is the % of the intended clipsize below which clip is not used
+def gen_clips(act_dict,task,location,clipsize=5000,overlap=0,verbose=False,startTS=0,endTS=1,len_tol=0.8,resample=False):
 
     clip_data = {} #the dictionary with clips
-    #params
-    len_tol = 0.8   #% of the intended clipsize below which clip is not used
 
     for trial in act_dict[task].keys():
         clip_data[trial] = {}
@@ -42,8 +41,10 @@ def gen_clips(act_dict,task,location,clipsize=5000,overlap=0,verbose=False,start
             clips = []
             for i in idx:
                 c = rawdata[(rawdata.index>=i) & (rawdata.index<i+clipsize)]
-                if len(c) > 0.8*int(clipsize/deltat): #discard clips whose length is less than len_tol% of the window size
+                if len(c) > len_tol*int(clipsize/deltat): #discard clips whose length is less than len_tol% of the window size
                     clips.append(c)
+                    
+            #store clip length
             clip_len = [clips[c].index[-1]-clips[c].index[0] for c in range(len(clips))] #store the length of each clip
             #assemble in dict
             clip_data[trial][s] = {'data':clips, 'clip_len':clip_len}
