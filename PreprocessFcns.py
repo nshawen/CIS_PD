@@ -24,6 +24,8 @@ def gen_clips(act_dict,task,location,clipsize=5000,overlap=0,verbose=False,start
                 print(task,' sensortype = %s - trial %d'%(s,trial))
             #create clips and store in a list
             rawdata = act_dict[task][trial][location][s]
+            if rawdata.empty is True: #skip if no data for current sensor
+                continue
             #reindex time (relative to start)
             idx = rawdata.index
             idx = idx-idx[0]
@@ -37,13 +39,18 @@ def gen_clips(act_dict,task,location,clipsize=5000,overlap=0,verbose=False,start
                 rawdata.index = idx
             #create clips data
             deltat = np.median(np.diff(rawdata.index))
-            idx = np.arange(0,rawdata.index[-1],clipsize*(1-overlap))
             clips = []
-            for i in idx:
-                c = rawdata[(rawdata.index>=i) & (rawdata.index<i+clipsize)]
-                if len(c) > len_tol*int(clipsize/deltat): #discard clips whose length is less than len_tol% of the window size
-                    clips.append(c)
-                    
+            #use entire recording
+            if clipsize == 0:
+                clips.append(rawdata)
+            #take clips
+            else:
+                idx = np.arange(0,rawdata.index[-1],clipsize*(1-overlap))
+                for i in idx:
+                    c = rawdata[(rawdata.index>=i) & (rawdata.index<i+clipsize)]
+                    if len(c) > len_tol*int(clipsize/deltat): #discard clips whose length is less than len_tol% of the window size
+                        clips.append(c)
+
             #store clip length
             clip_len = [clips[c].index[-1]-clips[c].index[0] for c in range(len(clips))] #store the length of each clip
             #assemble in dict
@@ -161,13 +168,15 @@ def feature_extraction(clip_data):
 #     return clip_data #not necessary
 
 
+def HPfilter(act_dict,task,loc,cutoff=0.75,ftype='highpass'):
 #highpass (or lowpass) filter data. HP to remove gravity (offset - limb orientation) from accelerometer data from each visit (trial)
 #input: Activity dictionary, cutoff freq [Hz], task, sensor location and type of filter (highpass or lowpass).
-def HPfilter(act_dict,task,loc,cutoff=0.75,ftype='highpass'):
 
     sensor = 'accel'
     for trial in act_dict[task].keys():
         rawdata = act_dict[task][trial][loc][sensor]
+        if rawdata.empty is True: #skip if no data for current sensor
+            continue
         idx = rawdata.index
         idx = idx-idx[0]
         rawdata.index = idx
