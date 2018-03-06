@@ -58,6 +58,50 @@ def gen_clips(act_dict,task,location,clipsize=5000,overlap=0,verbose=False,start
 
     return clip_data
 
+
+#store clips from all locations in a dataframe, indexed by the visit - NEED TO REFINE, do NOT USE
+def gen_clips_alllocs(act_dict,task,clipsize=5000,overlap=0,verbose=False,len_tol=0.95):
+
+    clip_data = pd.DataFrame()
+
+    for visit in act_dict[task].keys():
+
+        clip_data_visit=pd.DataFrame()
+
+        #loop through locations
+        for location in act_dict[task][visit].keys():
+
+            for s in ['accel','gyro']:
+
+                if verbose:
+                    print(task,' sensortype = %s - visit %d'%(s,visit))
+                #create clips and store in a list
+                rawdata = act_dict[task][visit][location][s]
+                if rawdata.empty is True: #skip if no data for current sensor
+                    continue
+                #reindex time (relative to start)
+                idx = rawdata.index
+                idx = idx-idx[0]
+                rawdata.index = idx
+                #create clips data
+                deltat = np.median(np.diff(rawdata.index))
+                clips = pd.DataFrame()
+                #take clips
+                idx = np.arange(0,rawdata.index[-1],clipsize*(1-overlap))
+                for i in idx:
+                    c = rawdata[(rawdata.index>=i) & (rawdata.index<i+clipsize)]
+                    if len(c) > len_tol*int(clipsize/deltat): #discard clips whose length is less than len_tol% of the window size
+                        df = pd.DataFrame({location+'_'+s:[c.values]},index=[visit])
+                        clips=pd.concat((clips,df))
+
+                clip_data_visit=pd.concat((clip_data_visit,clips),axis=1) #all clips from all locs for current visit
+
+        clip_data = pd.concat((clip_data_visit,clip_data)) #contains clips from all visits (index) and sensors (cols)
+
+    return clip_data
+
+
+
 #PSD on magnitude using Welch method
 def power_spectra_welch(rawdata,fm,fM):
     #compute PSD on signal magnitude
