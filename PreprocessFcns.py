@@ -160,17 +160,17 @@ def feature_extraction(clip_data):
 
                 #Cross-correlation between axes pairs
                 xcorr_xy = np.correlate(rawdata.iloc[:,0],rawdata.iloc[:,1],mode='same')
-                xcorr_xy = xcorr_xy/np.sum(xcorr_xy) #normalize values
+                # xcorr_xy = xcorr_xy/np.abs(np.sum(xcorr_xy)) #normalize values
                 xcorr_peak_xy = np.max(xcorr_xy)
                 xcorr_lag_xy = (np.argmax(xcorr_xy))/len(xcorr_xy) #normalized lag
 
                 xcorr_xz = np.correlate(rawdata.iloc[:,0],rawdata.iloc[:,2],mode='same')
-                xcorr_xz = xcorr_xz/np.sum(xcorr_xz) #normalize values
+                # xcorr_xz = xcorr_xz/np.abs(np.sum(xcorr_xz)) #normalize values
                 xcorr_peak_xz = np.max(xcorr_xz)
                 xcorr_lag_xz = (np.argmax(xcorr_xz))/len(xcorr_xz)
 
                 xcorr_yz = np.correlate(rawdata.iloc[:,1],rawdata.iloc[:,2],mode='same')
-                xcorr_yz = xcorr_yz/np.sum(xcorr_yz) #normalize values
+                # xcorr_yz = xcorr_yz/np.abs(np.sum(xcorr_yz)) #normalize values
                 xcorr_peak_yz = np.max(xcorr_yz)
                 xcorr_lag_yz = (np.argmax(xcorr_yz))/len(xcorr_yz)
 
