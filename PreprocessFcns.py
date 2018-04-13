@@ -265,6 +265,8 @@ def filterdata(act_dict,task,loc,sensor='accel',ftype='highpass',cutoff=0.5,cuto
 
     for trial in act_dict[task].keys():
         rawdata = act_dict[task][trial][loc][sensor]
+        if rawdata.empty:
+            continue
         idx = rawdata.index
         idx = idx-idx[0]
         rawdata.index = idx
