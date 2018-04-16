@@ -135,83 +135,79 @@ def feature_extraction(clip_data):
 
             #cycle through all clips for current trial and save dataframe of features for current trial and sensor
             features = []
-            #ensures that list contains data
-            if clip_data[trial][sensor]['data']:
-                for c in range(len(clip_data[trial][sensor]['data'])):
-                    rawdata = clip_data[trial][sensor]['data'][c]
-                    #acceleration magnitude
-                    rawdata_wmag = rawdata.copy()
-                    rawdata_wmag['Accel_Mag']=np.sqrt((rawdata**2).sum(axis=1))
+            for c in range(len(clip_data[trial][sensor]['data'])):
+                rawdata = clip_data[trial][sensor]['data'][c]
+                #acceleration magnitude
+                rawdata_wmag = rawdata.copy()
+                rawdata_wmag['Accel_Mag']=np.sqrt((rawdata**2).sum(axis=1))
 
-                    #extract features on current clip
+                #extract features on current clip
 
-                    #Root mean square of signal on each axis
-                    N = len(rawdata)
-                    RMS = 1/N*np.sqrt(np.asarray(np.sum(rawdata**2,axis=0)))
+                #Root mean square of signal on each axis
+                N = len(rawdata)
+                RMS = 1/N*np.sqrt(np.asarray(np.sum(rawdata**2,axis=0)))
 
-                    #range on each axis
-                    min_xyz = np.min(rawdata,axis=0)
-                    max_xyz = np.max(rawdata,axis=0)
-                    r = np.asarray(max_xyz-min_xyz)
+                #range on each axis
+                min_xyz = np.min(rawdata,axis=0)
+                max_xyz = np.max(rawdata,axis=0)
+                r = np.asarray(max_xyz-min_xyz)
 
-                    #Moments on each axis
-                    mean = np.asarray(np.mean(rawdata,axis=0))
-                    var = np.asarray(np.std(rawdata,axis=0))
-                    sk = skew(rawdata)
-                    kurt = kurtosis(rawdata)
+                #Moments on each axis
+                mean = np.asarray(np.mean(rawdata,axis=0))
+                var = np.asarray(np.std(rawdata,axis=0))
+                sk = skew(rawdata)
+                kurt = kurtosis(rawdata)
 
-                    #Cross-correlation between axes pairs
-                    xcorr_xy = np.correlate(rawdata.iloc[:,0],rawdata.iloc[:,1],mode='same')
-                    # xcorr_xy = xcorr_xy/np.abs(np.sum(xcorr_xy)) #normalize values
-                    xcorr_peak_xy = np.max(xcorr_xy)
-                    xcorr_lag_xy = (np.argmax(xcorr_xy))/len(xcorr_xy) #normalized lag
+                #Cross-correlation between axes pairs
+                xcorr_xy = np.correlate(rawdata.iloc[:,0],rawdata.iloc[:,1],mode='same')
+                # xcorr_xy = xcorr_xy/np.abs(np.sum(xcorr_xy)) #normalize values
+                xcorr_peak_xy = np.max(xcorr_xy)
+                xcorr_lag_xy = (np.argmax(xcorr_xy))/len(xcorr_xy) #normalized lag
 
-                    xcorr_xz = np.correlate(rawdata.iloc[:,0],rawdata.iloc[:,2],mode='same')
-                    # xcorr_xz = xcorr_xz/np.abs(np.sum(xcorr_xz)) #normalize values
-                    xcorr_peak_xz = np.max(xcorr_xz)
-                    xcorr_lag_xz = (np.argmax(xcorr_xz))/len(xcorr_xz)
+                xcorr_xz = np.correlate(rawdata.iloc[:,0],rawdata.iloc[:,2],mode='same')
+                # xcorr_xz = xcorr_xz/np.abs(np.sum(xcorr_xz)) #normalize values
+                xcorr_peak_xz = np.max(xcorr_xz)
+                xcorr_lag_xz = (np.argmax(xcorr_xz))/len(xcorr_xz)
 
-                    xcorr_yz = np.correlate(rawdata.iloc[:,1],rawdata.iloc[:,2],mode='same')
-                    # xcorr_yz = xcorr_yz/np.abs(np.sum(xcorr_yz)) #normalize values
-                    xcorr_peak_yz = np.max(xcorr_yz)
-                    xcorr_lag_yz = (np.argmax(xcorr_yz))/len(xcorr_yz)
+                xcorr_yz = np.correlate(rawdata.iloc[:,1],rawdata.iloc[:,2],mode='same')
+                # xcorr_yz = xcorr_yz/np.abs(np.sum(xcorr_yz)) #normalize values
+                xcorr_peak_yz = np.max(xcorr_yz)
+                xcorr_lag_yz = (np.argmax(xcorr_yz))/len(xcorr_yz)
 
-                    #pack xcorr features
-                    xcorr_peak = np.array([xcorr_peak_xy,xcorr_peak_xz,xcorr_peak_yz])
-                    xcorr_lag = np.array([xcorr_lag_xy,xcorr_lag_xz,xcorr_lag_yz])
+                #pack xcorr features
+                xcorr_peak = np.array([xcorr_peak_xy,xcorr_peak_xz,xcorr_peak_yz])
+                xcorr_lag = np.array([xcorr_lag_xy,xcorr_lag_xz,xcorr_lag_yz])
 
-                    #Dominant freq and relative magnitude (on acc magnitude)
-                    Pxx = power_spectra_welch(rawdata_wmag,fm=0,fM=10)
-                    domfreq = np.asarray([Pxx.iloc[:,-1].argmax()])
-                    Pdom_rel = Pxx.loc[domfreq].iloc[:,-1].values/Pxx.iloc[:,-1].sum() #power at dominant freq rel to total
+                #Dominant freq and relative magnitude (on acc magnitude)
+                Pxx = power_spectra_welch(rawdata_wmag,fm=0,fM=10)
+                domfreq = np.asarray([Pxx.iloc[:,-1].argmax()])
+                Pdom_rel = Pxx.loc[domfreq].iloc[:,-1].values/Pxx.iloc[:,-1].sum() #power at dominant freq rel to total
 
-                    #moments of PSD
-                    Pxx_moments = np.array([np.nanmean(Pxx.values),np.nanstd(Pxx.values),skew(Pxx.values),kurtosis(Pxx.values)])
+                #moments of PSD
+                Pxx_moments = np.array([np.nanmean(Pxx.values),np.nanstd(Pxx.values),skew(Pxx.values),kurtosis(Pxx.values)])
 
-                    #moments of jerk magnitude
-                    jerk = rawdata.iloc[:,-1].diff().values
-                    jerk_moments = np.array([np.nanmean(jerk),np.nanstd(jerk),skew(jerk[~np.isnan(jerk)]),kurtosis(jerk[~np.isnan(jerk)])])
+                #moments of jerk magnitude
+                jerk = rawdata.iloc[:,-1].diff().values
+                jerk_moments = np.array([np.nanmean(jerk),np.nanstd(jerk),skew(jerk[~np.isnan(jerk)]),kurtosis(jerk[~np.isnan(jerk)])])
 
-                    #sample entropy raw data (magnitude) and FFT
-                    sH_raw = []; sH_fft = []
+                #sample entropy raw data (magnitude) and FFT
+                sH_raw = []; sH_fft = []
 
-                    for a in range(3):
-                        x = rawdata.iloc[:,a]
-                        n = len(x) #number of samples in clip
-                        Fs = np.mean(1/(np.diff(x.index)/1000)) #sampling rate in clip
-                        sH_raw.append(nolds.sampen(x)) #samp entr raw data
-                        #for now disable SH on fft
-                        # f,Pxx_den = welch(x,Fs,nperseg=min(256,n/4))
-                        # sH_fft.append(nolds.sampen(Pxx_den)) #samp entr fft
+                for a in range(3):
+                    x = rawdata.iloc[:,a]
+                    n = len(x) #number of samples in clip
+                    Fs = np.mean(1/(np.diff(x.index)/1000)) #sampling rate in clip
+                    sH_raw.append(nolds.sampen(x)) #samp entr raw data
+                    #for now disable SH on fft
+                    # f,Pxx_den = welch(x,Fs,nperseg=min(256,n/4))
+                    # sH_fft.append(nolds.sampen(Pxx_den)) #samp entr fft
 
-                    #Assemble features in array
-                    X = np.concatenate((RMS,r,mean,var,sk,kurt,xcorr_peak,xcorr_lag,domfreq,Pdom_rel,Pxx_moments,jerk_moments,sH_raw))
-                    features.append(X)
+                #Assemble features in array
+                X = np.concatenate((RMS,r,mean,var,sk,kurt,xcorr_peak,xcorr_lag,domfreq,Pdom_rel,Pxx_moments,jerk_moments,sH_raw))
+                features.append(X)
 
-                F = np.asarray(features) #feature matrix for all clips from current trial
-                clip_data[trial][sensor]['features'] = pd.DataFrame(data=F,columns=features_list,dtype='float32')
-            else:
-                continue
+            F = np.asarray(features) #feature matrix for all clips from current trial
+            clip_data[trial][sensor]['features'] = pd.DataFrame(data=F,columns=features_list,dtype='float32')
 
 #     return clip_data #not necessary
 
@@ -260,7 +256,7 @@ def BPfilter(act_dict,task,loc,cutoff_low=3,cutoff_high=8,order=4):
         rawdatafilt = pd.DataFrame(data=xfilt,index=rawdata.index,columns=rawdata.columns)
         act_dict[task][trial][loc][sensor] = rawdatafilt
 
-
+#filters data in all recordings (visits)
 def filterdata(act_dict,task,loc,sensor='accel',ftype='highpass',cutoff=0.5,cutoff_bp=[3,8],order=4):
 
     for trial in act_dict[task].keys():
