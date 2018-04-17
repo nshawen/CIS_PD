@@ -257,31 +257,30 @@ def BPfilter(act_dict,task,loc,cutoff_low=3,cutoff_high=8,order=4):
         act_dict[task][trial][loc][sensor] = rawdatafilt
 
 #filters data in all recordings (visits)
-def filterdata(act_dict,task,loc,sensor='accel',ftype='highpass',cutoff=0.5,cutoff_bp=[3,8],order=4):
+def filterdata(act_dict,task,loc,trial,sensor='accel',ftype='highpass',cutoff=0.5,cutoff_bp=[3,8],order=4):
 
-    for trial in act_dict[task].keys():
-        rawdata = act_dict[task][trial][loc][sensor]
-        if rawdata.empty:
-            continue
-        idx = rawdata.index
-        idx = idx-idx[0]
-        rawdata.index = idx
-        x = rawdata.values
-        Fs = np.mean(1/(np.diff(rawdata.index)/1000)) #sampling rate
-        if ftype != 'bandpass':
-            #filter design
-            cutoff_norm = cutoff/(0.5*Fs)
-            b,a = butter(4,cutoff_norm,btype=ftype,analog=False)
-        else:
-            #filter design
-            cutoff_low_norm = cutoff_bp[0]/(0.5*Fs)
-            cutoff_high_norm = cutoff_bp[1]/(0.5*Fs)
-            b,a = butter(order,[cutoff_low_norm,cutoff_high_norm],btype='bandpass',analog=False)
+    rawdata = act_dict[task][trial][loc][sensor]
+    if rawdata.empty:
+        continue
+    idx = rawdata.index
+    idx = idx-idx[0]
+    rawdata.index = idx
+    x = rawdata.values
+    Fs = np.mean(1/(np.diff(rawdata.index)/1000)) #sampling rate
+    if ftype != 'bandpass':
+        #filter design
+        cutoff_norm = cutoff/(0.5*Fs)
+        b,a = butter(4,cutoff_norm,btype=ftype,analog=False)
+    else:
+        #filter design
+        cutoff_low_norm = cutoff_bp[0]/(0.5*Fs)
+        cutoff_high_norm = cutoff_bp[1]/(0.5*Fs)
+        b,a = butter(order,[cutoff_low_norm,cutoff_high_norm],btype='bandpass',analog=False)
 
-        #filter data
-        xfilt = filtfilt(b,a,x,axis=0)
-        rawdatafilt = pd.DataFrame(data=xfilt,index=rawdata.index,columns=rawdata.columns)
-        act_dict[task][trial][loc][sensor] = rawdatafilt
+    #filter data
+    xfilt = filtfilt(b,a,x,axis=0)
+    rawdatafilt = pd.DataFrame(data=xfilt,index=rawdata.index,columns=rawdata.columns)
+    act_dict[task][trial][loc][sensor] = rawdatafilt
 
 
 
